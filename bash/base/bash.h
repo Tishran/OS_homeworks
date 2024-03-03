@@ -49,9 +49,9 @@ void Exec(struct Tokenizer *tokenizer) {
             if (!WIFEXITED(status)) {
                 perror(argv[0]);
             }
+    }
 
-            for (int i = 0; i <= tokenizer->token_count; ++i) {
-                free(argv[i]);
-            }
+    for (int i = 0; i <= tokenizer->token_count; ++i) {
+        free(argv[i]);
     }
 }
