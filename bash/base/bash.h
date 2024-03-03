@@ -43,6 +43,7 @@ void Exec(struct Tokenizer *tokenizer) {
             if (execvp(argv[0], argv) == -1) {
                 printf("%s", "Command not found\n");
             }
+            break;
         default:
             waitpid(pid, &status, 0);
             if (!WIFEXITED(status)) {
