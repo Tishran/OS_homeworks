@@ -60,7 +60,6 @@ bool switchIO(int fd, int std_fd) {
     }
 
     close(fd);
-
     return true;
 }
 
