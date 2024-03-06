@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-
 char *copyStrFromToken(struct Token *token) {
     size_t string_size = token->len * sizeof(char) + 1;
     char *result = malloc(string_size);
