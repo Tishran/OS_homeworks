@@ -7,7 +7,6 @@
 
 int countPipes(struct Token *token) {
     int res = 0;
-
     while (token != NULL) {
         if (token->type == TT_PIPE) {
             ++res;
