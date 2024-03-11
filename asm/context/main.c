@@ -1,25 +1,28 @@
 #include "context.h"
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 
-void TestSimple() {
+static void TestSimple() {
     struct Context ctx;
 
     fprintf(stderr, "saving context\n");
     if (savectx(&ctx) == 0) {
         fprintf(stderr, "restoring context\n");
         jumpctx(&ctx);
+        assert(!"unreachable");
     }
     fprintf(stderr, "context restored\n");
 }
 
-void Set(int arr[7], int idx, int val) {
+static void Set(int arr[7], int idx, int val) {
+    assert(idx == val);
     assert(idx < 7);
     arr[idx] = val;
 }
 
-void TestChain() {
+static void TestChain() {
     struct Context ctx_a;
     struct Context ctx_b;
     struct Context ctx_c;
@@ -51,9 +54,11 @@ void TestChain() {
         Set(res, i++, 3);
         jumpctx(&ctx_a);
     }
+
+    assert(!"unreachable");
 }
 
-void TestLoop() {
+static void TestLoop() {
     volatile int i = 0;
     int j = 0;
     struct Context ctx;
@@ -71,31 +76,41 @@ void TestLoop() {
         fprintf(stderr, "restoring ctx %d\n", i);
         jumpctx(&ctx);
     }
+
+    assert(!"unreachable");
 }
 
-__attribute__((noinline)) void RestoreImpl(struct Context* ctx) {
+static __attribute__((noinline)) void RestoreImpl(struct Context* ctx) {
     volatile int i = 0;
     jumpctx(ctx);
+    assert(!"unreachable");
 }
 
-__attribute__((noinline)) void Restore(struct Context* ctx) {
+static __attribute__((noinline)) void Restore(struct Context* ctx) {
     volatile int i = 0;
     RestoreImpl(ctx);
 }
 
-void TestFunction() {
+static intptr_t TestFunction1() {
     volatile int j = 5;
     struct Context ctx;
     if (savectx(&ctx) == 0) {
         Restore(&ctx);
     }
     assert(j == 5);
+    return (intptr_t)TestFunction1;
+}
+
+static intptr_t TestFunction2() {
+    TestFunction1();
+    return (intptr_t)TestFunction2;
 }
 
 int main() {
     TestSimple();
     TestChain();
     TestLoop();
-    TestFunction();
+    assert(TestFunction1() == (intptr_t)TestFunction1);
+    assert(TestFunction2() == (intptr_t)TestFunction2);
     return 0;
 }
