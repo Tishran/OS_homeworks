@@ -11,8 +11,10 @@
 //    rax: сумма чисел
 //
 sum:
-    // Your code here
-    int $3
+    mov $0, %rax
+    add %rdi, %rax
+    add %rsi, %rax
+    ret
 
 // input:
 //    rdi: указатель на структуру
@@ -27,8 +29,13 @@ sum:
 //    в поле sum нужно записать сумму a и b
 //
 sum_struct:
-    // Your code here
-    int $3
+    push %rax
+    mov (%rdi), %rax
+    add 8(%rdi), %rax
+    add 16(%rdi), %rax
+    mov %rax, 16(%rdi)
+    pop %rax
+    ret
 
 // input: 
 //    rdi: указатель на массив int64_t 
@@ -38,8 +45,18 @@ sum_struct:
 //    rax: сумма элементов массива
 //
 sum_array:
-    // Your code here
-    int $3
+    xor %rax, %rax
+
+    loop_array:
+    cmp $0, %rsi
+    je break_loop_array
+    add (%rdi), %rax
+    add $8, %rdi
+    dec %rsi
+    jmp loop_array
+
+    break_loop_array:
+    ret
 
 // input:
 //    rdi: количество элементов на стеке (сразу после адреса возврата из функции)
@@ -48,5 +65,17 @@ sum_array:
 //    rax: сумма элементов со стека
 //
 sum_args:
-    // Your code here
-    int $3
+    mov $8, %rax
+    mul %rdi
+    mov %rax, %rdi
+    xor %rax, %rax
+
+    arg_loop:
+    cmp $0, %rdi
+    je break_arg_array
+    add (%rsp, %rdi), %rax
+    sub $8, %rdi
+    jmp arg_loop
+
+    break_arg_array:
+    ret
