@@ -2,20 +2,20 @@
         .global jumpctx
 
 savectx:
-    pop %rax
+    mov (%rsp), %rax
     mov %rax, (%rdi)
-    push %rax
 
     mov %rsp, 8(%rdi)
+    add $8, 8(%rdi)
     mov %rbp, 16(%rdi)
+
+    mov $0, %rax
     ret
 
 jumpctx:
-    pop %rax
-    mov (%rdi), %rax
-    push %rax
-
     mov 8(%rdi), %rsp
+    push (%rdi)
     mov 16(%rdi), %rbp
+
     mov $1, %rax
     ret
