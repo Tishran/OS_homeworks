@@ -69,7 +69,6 @@ sum_args:
     mul %rdi
     mov %rax, %rdi
     xor %rax, %rax
-
     arg_loop:
     cmp $0, %rdi
     je break_arg_array
