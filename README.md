@@ -104,13 +104,13 @@ $ git push origin main
 2) Создаем образ `mephi-os` (требуется сделать всего один раз):
 ```bash
 cd <ваш репозиторий>
-docker build . -t mephi-os
+docker build --platform linux/x86_64 . -t mephi-os
 ```
 
 3) После того как вы создали образ `mephi-os`. Можно создать контейнер:
 ```bash
 cd <ваш репозиторий>
-docker run -it -v ./:/workspace mephi-os bash
+docker run --platform linux/x86_64 -it -v ./:/workspace mephi-os bash
 ```
 
 Эта команда переключает вас в контейнер в интерактивном режиме, а так же синхронизирует вашу текущую директорию с директорией `/workspace` в контейнере. Вы можете менять файлы как в контейнере, так и вне, все изменения будут видны в обоих местах. 

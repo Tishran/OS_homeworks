@@ -14,7 +14,6 @@ RUN apt-get install -y \
         make \
         build-essential \
         g++-13 \
-        gcc-multilib \
         gdb \
         python3 \
         python3-pip \
