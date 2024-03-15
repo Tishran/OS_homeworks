@@ -14,3 +14,4 @@ cmake-*
 .vs/
 .DS_Store
 .cache/
+main
