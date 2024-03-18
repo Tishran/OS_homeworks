@@ -9,7 +9,7 @@ int open(const char* pathname, int flags) {
         "syscall\n\t"
         "mov %%eax, %0\n\t"
         : "=r" (result)
-        : "rm" (pathname), "rm" (flags)
+        : "m" (pathname), "rm" (flags)
         : "%rax", "%rdi", "%rsi");
 
     return result;
