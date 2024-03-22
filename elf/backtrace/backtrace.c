@@ -2,19 +2,14 @@
 
 #include <elf.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <fcntl.h>
-#include <assert.h>
 #include <sys/mman.h>
-#include <unistd.h>
-#include <link.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <stdbool.h>
 
 char *AddrToName(void *addr) {
-    const char *fname = "/proc/self/exe";
-    struct stat st;
+    static const char *fname = "/proc/self/exe";
+    static struct stat st;
     if (stat(fname, &st) != 0) {
         perror("stat");
         return NULL;
@@ -26,26 +21,27 @@ char *AddrToName(void *addr) {
     Elf64_Shdr *shdr = (Elf64_Shdr *) (proc_addr + ehdr->e_shoff);
     int shnum = ehdr->e_shnum;
 
+    char* functionName = NULL;
     for (int i = 0; i < shnum; ++i) {
         if (shdr[i].sh_type == SHT_SYMTAB) {
-            Elf64_Sym *symbol_table = (Elf64_Sym *) (proc_addr + shdr[i].sh_offset);
-            int symbol_count = shdr[i].sh_size / sizeof(Elf64_Sym);
+            Elf64_Sym *symtab = (Elf64_Sym *) (proc_addr + shdr[i].sh_offset);
+            int symcount = shdr[i].sh_size / sizeof(Elf64_Sym);
 
-            Elf64_Addr curr_addr = (Elf64_Addr) NULL;
-            int curr_j = 0;
-            for (int j = 0; j < symbol_count; ++j) {
-                if ((void *) symbol_table[j].st_value <= addr && symbol_table[j].st_value > curr_addr) {
-                    curr_addr = symbol_table[j].st_value;
-                    curr_j = j;
+            Elf64_Addr best_addr = (Elf64_Addr) NULL;
+            int best_j = 0;
+            for (int j = 0; j < symcount; ++j) {
+                if ((void *) symtab[j].st_value <= addr && symtab[j].st_value > best_addr) {
+                    best_addr = symtab[j].st_value;
+                    best_j = j;
                 }
             }
 
-            char *res = (proc_addr + shdr[shdr[i].sh_link].sh_offset + symbol_table[curr_j].st_name);
-            return res;
+            functionName = (proc_addr + shdr[shdr[i].sh_link].sh_offset + symtab[best_j].st_name);
+            break;
         }
     }
 
-    return NULL;
+    return functionName;
 }
 
 int Backtrace(void *backtrace[], int limit) {
