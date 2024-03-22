@@ -72,5 +72,10 @@ int Backtrace(void *backtrace[], int limit) {
 }
 
 void PrintBt() {
-    // Your code here
+    void* bt[256];
+
+    int sz = Backtrace(bt, 256);
+    for (int i = 0; i < sz; ++i) {
+        printf("%p %s\n", bt[i], AddrToName(bt[i]));
+    }
 }
