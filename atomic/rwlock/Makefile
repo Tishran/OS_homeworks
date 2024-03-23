@@ -5,7 +5,7 @@ CFLAGS=-g -O2 -Wall -Werror -lpthread
 
 compile: $(wildcard .h) $(wildcard *.c)
 	! grep pthread rwlock.h
-	gcc $(CFLAGS) main.c -o $(RESULT)
+	gcc main.c -o $(RESULT) $(CFLAGS)
 
 run: compile
 	./$(RESULT)
