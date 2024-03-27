@@ -27,7 +27,7 @@ void HandleSigsegv(int sig, siginfo_t *siginfo, void *ctx) {
         if (errno == ENOMEM) {
 //            fprintf(stderr, "%s\n", "NO MEM HAPPENED!!!!!!!!!!!!!!!!!!!!!!!!!!");
             munmap((void*) SQRTS, PAGE_SIZE * page_number);
-            SQRTS = (double *) ((void *) SQRTS + page_number * PAGE_SIZE);
+//            SQRTS = (double *) ((void *) SQRTS + page_number * PAGE_SIZE);
             page_start = mmap((void *) SQRTS + PAGE_SIZE * page_number, PAGE_SIZE,
                                     PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED, -1, 0);
 //            fprintf(stderr, "%d %d\n", page_start == MAP_FAILED, errno == ENOMEM);
