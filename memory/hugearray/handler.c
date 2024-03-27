@@ -7,7 +7,6 @@
 extern size_t PAGE_SIZE;
 extern double *SQRTS;
 extern int MAX_SQRTS;
-extern int f;
 
 void CalculateSqrts(double *sqrt_pos, int start, int n);
 
@@ -26,7 +25,6 @@ void HandleSigsegv(int sig, siginfo_t *siginfo, void *ctx) {
 
     if (page_start == MAP_FAILED) {
         if (errno == ENOMEM) {
-            f = 1;
 //            fprintf(stderr, "%s\n", "NO MEM HAPPENED!!!!!!!!!!!!!!!!!!!!!!!!!!");
             munmap((void*) SQRTS, PAGE_SIZE * page_number);
             SQRTS = (double *) ((void *) SQRTS + page_number * PAGE_SIZE);
