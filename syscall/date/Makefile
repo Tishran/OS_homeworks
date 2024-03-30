@@ -1,5 +1,3 @@
-default: test
-
 OBJS = \
 	bio.o\
 	console.o\
@@ -246,13 +244,6 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'make gdb'." 1>&2
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
 
-test:
-	@echo $(MAKE) clean
-	@$(MAKE) clean || \
-	  (echo "'make clean' failed.  HINT: Do you have another running instance of xv6?" && exit 1)
-	python3 ./test.py
-
-
 # CUT HERE
 # prepare dist for students
 # after running make dist, probably want to
@@ -295,4 +286,4 @@ tar:
 	cp dist/* dist/.gdbinit.tmpl /tmp/xv6
 	(cd /tmp; tar cf - xv6) | gzip >xv6-rev10.tar.gz  # the next one will be 10 (9/17)
 
-.PHONY: dist-test dist default test
+.PHONY: dist-test dist
