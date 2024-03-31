@@ -21,6 +21,7 @@ RUN apt-get install -y \
         man \
         vim
 
+RUN apt-get update --fix-missing
 RUN apt-get install -y qemu-system-x86 \
         qemu-user-static
 
