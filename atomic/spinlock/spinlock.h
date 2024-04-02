@@ -9,15 +9,14 @@ inline void SpinLock_Init(struct SpinLock *lock) {
 }
 
 inline void SpinLock_Lock(struct SpinLock *lock) {
-    int unlocked = 0;
     int locked = 1;
 
     asm volatile("while_lock:\n\t"
                  "movl $0, %%eax\n\t"
                  "lock\n\t"
-                 "cmpxchg %2, %0\n\t"
+                 "cmpxchg %1, %0\n\t"
                  "jne while_lock"
-            : "+m" (lock->curr_state), "+a" (unlocked)
+            : "+m" (lock->curr_state)
             : "r" (locked)
             : "memory");
 
