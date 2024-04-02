@@ -11,16 +11,16 @@ inline void SpinLock_Init(struct SpinLock *lock) {
 inline void SpinLock_Lock(struct SpinLock *lock) {
     int locked = 1;
 
-    asm volatile("while_block:\n\t"
+    asm volatile("1:\n\t"
                  "movl $0, %%eax\n\t"
                  "lock\n\t"
                  "cmpxchg %1, %0\n\t"
-                 "jne pause_block\n\t"
-                 "jmp end\n\t"
-                 "pause_block:\n\t"
+                 "jne 2f\n\t"
+                 "jmp 3f\n\t"
+                 "2:\n\t"
                  "pause\n\t"
-                 "jmp while_block\n\t"
-                 "end:\n\t"
+                 "jmp 1b\n\t"
+                 "3:\n\t"
             : "+m" (lock->curr_state)
             : "r" (locked)
             : "memory");
