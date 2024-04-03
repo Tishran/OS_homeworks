@@ -23,7 +23,7 @@ inline void SpinLock_Lock(struct SpinLock *lock) {
                  "3:\n\t"
             : "+m" (lock->curr_state)
             : "r" (locked)
-            : "memory");
+            : "cc", "memory");
 
     __sync_synchronize();
 }
