@@ -7,55 +7,45 @@
 #include "spinlock.h"
 #include "atomic.h"
 
-enum rwlockstate {
-    RLOCK, WLOCK, UNLOCK
-};
+//enum rwlockstate {
+//    RLOCK, WLOCK, UNLOCK
+//};
+//int64_t UNLOCK = 0;
+//int64_t RLOCK = 1;
+//int64_t WLOCK = -1;
 
 struct RwLock {
-    enum rwlockstate state;
+    int64_t writing;
     int64_t readers;
-    struct SpinLock spinlock;
 };
 
 inline void RwLock_Init(struct RwLock *lock) {
-    lock->state = UNLOCK;
+    lock->writing = 0; // -1 - writing is permitted
     lock->readers = 0;
-    SpinLock_Init(&lock->spinlock);
 }
 
 inline void RwLock_ReadLock(struct RwLock *lock) {
-    SpinLock_Lock(&lock->spinlock);
-    AtomicXchg(&lock->readers, lock->readers);
+    int64_t expected_writing = 0;
+    while (AtomicCas(&lock->writing, &expected_writing, 0) != 1) {
+        asm volatile("pause");
+    }
 
-    lock->state = RLOCK;
-    lock->readers++;
-
-    SpinLock_Unlock(&lock->spinlock);
+    AtomicAdd(&lock->readers, 1);
 }
 
 inline void RwLock_ReadUnlock(struct RwLock *lock) {
-    SpinLock_Lock(&lock->spinlock);
-
-    --lock->readers;
-    if (lock->readers == 0) {
-        lock->state = UNLOCK;
-    }
-
-    SpinLock_Unlock(&lock->spinlock);
+    AtomicSub(&lock->readers, 1);
 }
 
 inline void RwLock_WriteLock(struct RwLock *lock) {
-    SpinLock_Lock(&lock->spinlock);
-
-    while (lock->state != UNLOCK) {
-        SpinLock_Unlock(&lock->spinlock);
-        SpinLock_Lock(&lock->spinlock);
+    int64_t expected_reading = 0;
+    int64_t expected_writing = 0;
+    while (AtomicCas(&lock->readers, &expected_reading, 0) != 1 &&
+           AtomicCas(&lock->writing, &expected_writing, 1) != 1) {
+        asm volatile("pause");
     }
-
-    lock->state = WLOCK;
 }
 
 inline void RwLock_WriteUnlock(struct RwLock *lock) {
-    lock->state = UNLOCK;
-    SpinLock_Unlock(&lock->spinlock);
+    AtomicSub(&lock->writing, 1);
 }
