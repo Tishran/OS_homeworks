@@ -4,7 +4,7 @@ RESULT=main
 CFLAGS=-g -O2 -Wall -Werror -lpthread
 
 compile: $(wildcard .h) $(wildcard *.c)
-	! grep pthread spinlock.h atomic.h rwlock.h
+	! grep pthread atomic.h rwlock.h spinlock.h
 	gcc main.c -o $(RESULT) $(CFLAGS)
 
 run: compile
