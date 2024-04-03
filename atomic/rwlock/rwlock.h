@@ -26,7 +26,7 @@ inline void RwLock_Init(struct RwLock *lock) {
 
 inline void RwLock_ReadLock(struct RwLock *lock) {
     int64_t expected_writing = 0;
-    while (AtomicCas(&lock->writing, &expected_writing, 0) != 1) {
+    while (AtomicCas(&lock->writing, &expected_writing, -1) != 1) {
         asm volatile("pause");
     }
 
@@ -34,6 +34,7 @@ inline void RwLock_ReadLock(struct RwLock *lock) {
 }
 
 inline void RwLock_ReadUnlock(struct RwLock *lock) {
+    AtomicAdd(&lock->writing, 1);
     AtomicSub(&lock->readers, 1);
 }
 
