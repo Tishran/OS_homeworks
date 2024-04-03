@@ -26,6 +26,7 @@ inline void RwLock_Init(struct RwLock *lock) {
 inline void RwLock_ReadLock(struct RwLock *lock) {
     usleep(500000);
     SpinLock_Lock(&lock->spinlock);
+    AtomicXchg(&lock->readers, lock->readers);
 
     lock->state = RLOCK;
     lock->readers++;
