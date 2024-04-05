@@ -4,6 +4,7 @@
 #include "spinlock.h"
 
 #include <stdint.h>
+#include <unistd.h>
 
 struct SeqLock {
     int64_t state;
@@ -16,17 +17,16 @@ inline void SeqLock_Init(struct SeqLock* lock) {
 }
 
 inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
-//    fprintf(stderr, "%s\n", "readlock");
-    return lock->state;
+    SpinLock_Lock(&lock->lock);
+    int64_t res = lock->state;
+    SpinLock_Unlock(&lock->lock);
+    return res;
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
     SpinLock_Lock(&lock->lock);
-//    fprintf(stderr, "%s\n", "readUnlock");
-    int res = 0;
-    if (lock->state == value) {
-        res = 1;
-    }
+
+    int res = (value & 1) | (lock->state ^ value);
 
     SpinLock_Unlock(&lock->lock);
 
