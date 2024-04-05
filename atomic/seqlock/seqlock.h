@@ -21,7 +21,19 @@ inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
-    return (((int)value & 1) | ((int) lock->state ^ (int) value));
+    SpinLock_Lock(&lock->lock);
+
+    while (lock->state % 2 == 1) {
+        SpinLock_Unlock(&lock->lock);
+        asm volatile("pause");
+        SpinLock_Lock(&lock->lock);
+    }
+
+    int res = value == lock->state;
+
+    SpinLock_Unlock(&lock->lock);
+
+    return res;
 }
 
 inline void SeqLock_WriteLock(struct SeqLock* lock) {
