@@ -17,17 +17,18 @@ inline void SeqLock_Init(struct SeqLock* lock) {
 }
 
 inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
-    int64_t value = 0;
-    AtomicXchg(&value, lock->state);
-    return value;
+    usleep(50000);
+    SpinLock_Lock(&lock->lock);
+    return 1;
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
-    SpinLock_Lock(&lock->lock);
-    int res = AtomicCas(&lock->state, &value, value);
+//    fprintf(stderr, "%s", "");
+//    int res = AtomicCas(&lock->state, &value, value);
+//
+//    return res;
     SpinLock_Unlock(&lock->lock);
-
-    return res;
+    return 1;
 }
 
 inline void SeqLock_WriteLock(struct SeqLock* lock) {
