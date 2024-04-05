@@ -24,11 +24,7 @@ inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
-    SpinLock_Lock(&lock->lock);
-    int res = value == lock->state;
-    SpinLock_Unlock(&lock->lock);
-
-    return res;
+    return AtomicCas(&lock->state, &value, value);
 }
 
 inline void SeqLock_WriteLock(struct SeqLock* lock) {
