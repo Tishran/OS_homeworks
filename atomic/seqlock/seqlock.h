@@ -7,46 +7,40 @@
 
 struct SeqLock {
     int64_t state;
-    struct SpinLock lock_state;
+    struct SpinLock lock;
 };
 
 inline void SeqLock_Init(struct SeqLock* lock) {
     lock->state = 0;
-    SpinLock_Init(&lock->lock_state);
+    SpinLock_Init(&lock->lock);
 }
 
 inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
-//    SpinLock_Lock(&lock->lock_state);
 //    fprintf(stderr, "%s\n", "readlock");
-    int64_t res = lock->state;
-//    SpinLock_Unlock(&lock->lock_state);
-
-    return res;
+    return lock->state;
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
-    int res = 0;
-//    SpinLock_Lock(&lock->lock_state);
+    SpinLock_Lock(&lock->lock);
 //    fprintf(stderr, "%s\n", "readUnlock");
-    if (value == lock->state % 2 && lock->state % 2 == 0) {
+    int res = 0;
+    if (lock->state == value) {
         res = 1;
     }
 
-//    SpinLock_Unlock(&lock->lock_state);
+    SpinLock_Unlock(&lock->lock);
 
     return res;
 }
 
 inline void SeqLock_WriteLock(struct SeqLock* lock) {
-    SpinLock_Lock(&lock->lock_state);
+    SpinLock_Lock(&lock->lock);
+//    fprintf(stderr, "%s\n", "writelock");
     ++lock->state;
-//    fprintf(stderr, "%s state:%ld\n", "writelock", lock->state);
-//    SpinLock_Unlock(&lock->lock_state);
 }
 
 inline void SeqLock_WriteUnlock(struct SeqLock* lock) {
-//    SpinLock_Lock(&lock->lock_state);
+//    fprintf(stderr, "%s\n", "writeUnlock");
     ++lock->state;
-//    fprintf(stderr, "%s state:%ld\n", "writeUnlock", lock->state);
-    SpinLock_Unlock(&lock->lock_state);
+    SpinLock_Unlock(&lock->lock);
 }
