@@ -17,20 +17,14 @@ inline void SeqLock_Init(struct SeqLock* lock) {
 }
 
 inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
-    return lock->state;
+    int64_t value = 0;
+    AtomicXchg(&value, lock->state);
+    return value;
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
     SpinLock_Lock(&lock->lock);
-
-    while (lock->state % 2 == 1) {
-        SpinLock_Unlock(&lock->lock);
-        asm volatile("pause");
-        SpinLock_Lock(&lock->lock);
-    }
-
-    int res = value == lock->state;
-
+    int res = AtomicCas(&lock->state, &value, value);
     SpinLock_Unlock(&lock->lock);
 
     return res;
