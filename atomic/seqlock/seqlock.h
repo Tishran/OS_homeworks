@@ -17,12 +17,18 @@ inline void SeqLock_Init(struct SeqLock* lock) {
 }
 
 inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
-    int64_t result = lock->state;
-    return result;
+    return lock->state;
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
-    return !AtomicCas(&value, &(lock->state), value);
+    SpinLock_Lock(&lock->lock);
+    int res = 0;
+    if (lock->state == value && value % 2 == 0) {
+        res = 1;
+    }
+    SpinLock_Unlock(&lock->lock);
+
+    return res;
 }
 
 inline void SeqLock_WriteLock(struct SeqLock* lock) {
