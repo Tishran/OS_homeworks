@@ -4,6 +4,7 @@
 #include "spinlock.h"
 
 #include <stdint.h>
+#include <threads.h>
 #include <unistd.h>
 
 struct SeqLock {
@@ -21,22 +22,19 @@ inline int64_t SeqLock_ReadLock(struct SeqLock* lock) {
 }
 
 inline int SeqLock_ReadUnlock(struct SeqLock* lock, int64_t value) {
-    SpinLock_Lock(&lock->lock);
-    int res = 0;
-    if (lock->state == value && value % 2 == 0) {
-        res = 1;
+    while (lock->state % 2 == 1) {
+        thrd_yield();
     }
-    SpinLock_Unlock(&lock->lock);
 
-    return res;
+    return value == lock->state;
 }
 
 inline void SeqLock_WriteLock(struct SeqLock* lock) {
     SpinLock_Lock(&lock->lock);
-    ++lock->state;
+    AtomicAdd(&lock->state, 1);
 }
 
 inline void SeqLock_WriteUnlock(struct SeqLock* lock) {
-    ++lock->state;
+    AtomicAdd(&lock->state, 1);
     SpinLock_Unlock(&lock->lock);
 }
