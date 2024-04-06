@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 struct SeqLock {
-    int64_t state;
+    volatile int64_t state;
     struct SpinLock lock;
 };
 
