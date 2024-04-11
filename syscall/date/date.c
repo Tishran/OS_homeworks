@@ -13,9 +13,9 @@ int main(int argc, char *argv[]) {
             month_format = "%d-";
         }
 
-        char* day_format = "0%d ";
+        char* day_format = "0%dT";
         if (r->day >= 10) {
-            day_format = "%d ";
+            day_format = "%dT";
         }
 
         char* hour_format = "0%d:";
