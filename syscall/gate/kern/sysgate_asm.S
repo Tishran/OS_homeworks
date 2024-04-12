@@ -1,6 +1,4 @@
 .global _syscall_enter
-.global sys_work
-.global sys_retire
 
 _syscall_enter:
     push %rcx
