@@ -17,5 +17,6 @@ _syscall_enter:
         jmp end
 
     end:
+    mov $5, %rax
     pop %rcx
     sysretq
