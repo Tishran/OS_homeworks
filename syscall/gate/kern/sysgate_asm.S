@@ -7,6 +7,7 @@ _syscall_enter:
     jmp call_sys_retire
 
     call_sys_work:
+        mov %rsi, %rdi
         call sys_work
         jmp end
 
