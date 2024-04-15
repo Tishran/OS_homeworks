@@ -1,0 +1,132 @@
+diff -ru xv6-solution/date.c xv6-autotest/date.c
+--- xv6-solution/date.c	2018-09-22 17:06:52.900621697 +0300
++++ xv6-autotest/date.c	2018-09-26 00:47:05.332072676 +0300
+@@ -14,5 +14,11 @@
+ 
+   printf(1, "%04d-%02d-%02dT%02d:%02d:%02d\n", r.year, r.month, r.day, r.hour, r.minute, r.second);
+ 
++  struct rtcdate* badr = (struct rtcdate*)-1;
++  if (!date(badr)) {
++    printf(2, "no -1 check\n");
++    exit();
++  }
++
+   exit();
+ }
+diff -ru xv6-solution/init.c xv6-autotest/init.c
+--- xv6-solution/init.c	2018-09-22 16:57:32.990284964 +0300
++++ xv6-autotest/init.c	2018-09-22 17:40:02.050762592 +0300
+@@ -5,7 +5,7 @@
+ #include "user.h"
+ #include "fcntl.h"
+ 
+-char *argv[] = { "sh", 0 };
++char *argv[] = { "date", 0 };
+ 
+ int
+ main(void)
+@@ -19,19 +19,18 @@
+   dup(0);  // stdout
+   dup(0);  // stderr
+ 
+-  for(;;){
+-    printf(1, "init: starting sh\n");
+-    pid = fork();
+-    if(pid < 0){
+-      printf(1, "init: fork failed\n");
+-      exit();
+-    }
+-    if(pid == 0){
+-      exec("sh", argv);
+-      printf(1, "init: exec sh failed\n");
+-      exit();
+-    }
+-    while((wpid=wait()) >= 0 && wpid != pid)
+-      printf(1, "zombie!\n");
++  printf(1, "init: starting date\n");
++  pid = fork();
++  if(pid < 0){
++    printf(1, "init: fork failed\n");
++    exit();
+   }
++  if(pid == 0){
++    exec("date", argv);
++    printf(1, "init: exec date failed\n");
++    exit();
++  }
++  while((wpid=wait()) >= 0 && wpid != pid)
++    printf(1, "zombie!\n");
++  exit();
+ }
+diff -ru xv6-solution/Makefile xv6-autotest/Makefile
+--- xv6-solution/Makefile	2018-09-22 17:06:28.420615664 +0300
++++ xv6-autotest/Makefile	2018-09-22 17:47:02.007239015 +0300
+@@ -83,6 +83,8 @@
+ # FreeBSD ld wants ``elf_i386_fbsd''
+ LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
+ 
++test: qemu-auto
++
+ xv6.img: bootblock kernel fs.img
+ 	dd if=/dev/zero of=xv6.img count=10000
+ 	dd if=bootblock of=xv6.img conv=notrunc
+@@ -174,7 +176,7 @@
+ 	_usertests\
+ 	_wc\
+ 	_zombie\
+-	_date\
++	_date
+ 
+ fs.img: mkfs README $(UPROGS)
+ 	./mkfs fs.img README $(UPROGS)
+@@ -214,6 +216,7 @@
+ CPUS := 2
+ endif
+ QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 512 $(QEMUEXTRA)
++QEMUEXIT = -device isa-debug-exit,iobase=0xf4,iosize=0x04
+ 
+ qemu: fs.img xv6.img
+ 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
+@@ -235,6 +238,9 @@
+ 	@echo "*** Now run 'gdb'." 1>&2
+ 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
+ 
++qemu-auto: xv6.img
++	$(QEMU) -nographic $(QEMUOPTS) $(QEMUEXIT); test $$? -eq 1
++
+ # CUT HERE
+ # prepare dist for students
+ # after running make dist, probably want to
+@@ -277,4 +283,4 @@
+ 	cp dist/* dist/.gdbinit.tmpl /tmp/xv6
+ 	(cd /tmp; tar cf - xv6) | gzip >xv6-rev10.tar.gz  # the next one will be 10 (9/17)
+ 
+-.PHONY: dist-test dist
++.PHONY: qemu-auto, test
+diff -ru xv6-solution/proc.c xv6-autotest/proc.c
+--- xv6-solution/proc.c	2018-09-22 16:57:32.942285335 +0300
++++ xv6-autotest/proc.c	2018-09-26 00:47:05.332072676 +0300
+@@ -221,6 +221,13 @@
+   return pid;
+ }
+ 
++void
++qemu_exit(void)
++{
++	// QEMU exit code is (value << 1) | 1
++	outb(0xf4, 0x00);
++}
++
+ // Exit the current process.  Does not return.
+ // An exited process remains in the zombie state
+ // until its parent calls wait() to find out it exited.
+@@ -232,7 +239,8 @@
+   int fd;
+ 
+   if(curproc == initproc)
+-    panic("init exiting");
++    qemu_exit();
++    //panic("init exiting");
+ 
+   // Close all open files.
+   for(fd = 0; fd < NOFILE; fd++){
