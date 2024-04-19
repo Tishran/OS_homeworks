@@ -1,55 +1,45 @@
+#include <sys/user.h>
 #include <malloc.h>
-#include <sys/procfs.h>
-#include <stdbool.h>
 #include "fiber.h"
 
-struct ContextList *ctxList;
+struct Context *curr = NULL;
+struct Context *tail = NULL;
 
 void Handler(void (*func)(void *), void *data) {
     func(data);
-    ctxList->curr->toDel = true;
+    curr->toDel = true;
 
     // check here - might be wrong
-    struct Context *old = ctxList->curr;
-    ctxList->curr = ctxList->curr->next;
+    struct Context *old = curr;
+    curr = curr->next;
     asm volatile ("push %0\n\t"
                   "push %1"
             :
             : "rm" (func), "rm" (data)); // will it work?
-    SwitchContext(old, ctxList->curr);
+    SwitchContext(old, curr);
 }
 
 // damn, that is some shit code here
 void FiberSpawn(void (*func)(void *), void *data) {
-    if (ctxList == NULL) {
-        ctxList = malloc(sizeof(struct ContextList));
-        ctxList->curr = NULL;
-        ctxList->tail = NULL;
-        ctxList->head = NULL;
-    }
+    if (curr == NULL) {
+        curr = malloc(sizeof(struct Context));
+        curr->toDel = false;
 
-    if (ctxList->curr == NULL) {
-        ctxList->curr = malloc(sizeof(struct Context));
-        ctxList->curr->toDel = false;
+        curr->rip = (void *) Handler;
+        curr->rsp = (void *) malloc(PAGE_SIZE);
+        curr->rsp += PAGE_SIZE;
+        curr->rdi = func; // idk, might be wrong, check calling conventions
+        curr->rsi = data;
 
-        ctxList->curr->rip = (void *) Handler;
-        ctxList->curr->rsp = (void *) malloc(PAGE_SIZE) + PAGE_SIZE;
-        ctxList->curr->rdi = func; // idk, might be wrong, check calling conventions
-        ctxList->curr->rsi = data;
-
-        ctxList->head = ctxList->curr;
-        ctxList->tail = ctxList->curr;// idk
-        ctxList->head->next = ctxList->curr;
-        ctxList->tail->prev = ctxList->curr;
-        ctxList->head->prev = ctxList->tail;
-        ctxList->tail->next = ctxList->head;
-
-        ctxList->head->next = ctxList->head;
-        ctxList->head->prev = ctxList->head;
+        tail = curr;// idk
+        tail->prev = curr;
+        tail->next = curr;
+        curr->prev = tail;
+        curr->next = tail;
     } else {
         struct Context *newContext = NULL;
-        newContext = (struct Context *) malloc(sizeof(struct Context));
-        (void) newContext;
+        newContext = malloc(sizeof(struct Context));
+
         newContext->toDel = false;
         newContext->rip = (void *) Handler;
         newContext->rsp = (void *) malloc(PAGE_SIZE);
@@ -59,36 +49,36 @@ void FiberSpawn(void (*func)(void *), void *data) {
         // т к эти регистры затерутся при вызове
 
         // check this part later
-        newContext->next = ctxList->head;
+        newContext->next = tail->next;
 
-        ctxList->tail->next = newContext;
-        newContext->prev = ctxList->tail;
-        ctxList->tail = newContext;
+        tail->next = newContext;
+        newContext->prev = tail;
+        tail = newContext;
     }
 }
 
 void FiberYield() {
     // wtf, is this that easy???
-    struct Context *old = ctxList->curr;
-    ctxList->curr = ctxList->curr->next;
+    struct Context *old = curr;
+    curr = curr->next;
 
     asm volatile ("push %0\n\t"
                   "push %1"
             :
             : "rm" (old->rdi), "rm" (old->rsi)); // will it work?
-    SwitchContext(old, ctxList->curr);
+    SwitchContext(old, curr);
 
     if (old->toDel) {
         free(old->rsp);
         old->prev->next = old->next;
         old->next->prev = old->prev;
 
-        free(ctxList->curr);
+        free(curr);
     }
 }
 
 int FiberTryJoin() {
-    if (ctxList->curr->next == NULL && ctxList->curr->prev == NULL) {
+    if (curr->next == NULL && curr->prev == NULL) {
         return 1;
     }
 

@@ -11,12 +11,6 @@ struct Context {
     bool toDel;
 };
 
-struct ContextList {
-    struct Context *head;
-    struct Context *tail;
-    struct Context *curr;
-};
-
 extern void SwitchContext(struct Context *current, struct Context *next);
 
 void Handler(void (*func)(void *), void *data);
