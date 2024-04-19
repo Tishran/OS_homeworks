@@ -17,8 +17,6 @@ struct ContextList {
     struct Context *curr;
 };
 
-extern void StartFiber(struct Context *newContext);
-
 extern void SwitchContext(struct Context *current, struct Context *next);
 
 void Handler(void (*func)(void *), void *data);

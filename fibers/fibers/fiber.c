@@ -1,6 +1,6 @@
-#include <stddef.h>
 #include <malloc.h>
 #include <sys/procfs.h>
+#include <stdbool.h>
 #include "fiber.h"
 
 struct ContextList *ctxList;
