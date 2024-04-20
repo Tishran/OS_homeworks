@@ -3,8 +3,24 @@
 #include <stdint.h>
 #include "fiber.h"
 
+typedef struct Context {
+    void *rbx, *rbp, *r12, *r13, *r14, *r15, *rsp, *rip;
+    void (*func)(void *);
+    void *data;
+    void *start;
+} Context;
+
+typedef struct Fiber {
+    struct Context *context;
+    struct Fiber *next;
+    struct Fiber *prev;
+    bool toDel;
+} Fiber;
+
+extern void StartFiber(struct Context* current);
+extern void SwitchContext(struct Context *current, struct Context *next);
+
 struct Fiber *curr = NULL;
-//struct Fiber *tail = NULL;
 
 void Handler(void (*func)(void *), void *data) {
     func(data);
