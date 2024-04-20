@@ -1,6 +1,7 @@
 #include <sys/user.h>
 #include <malloc.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "fiber.h"
 
 typedef struct Context {
