@@ -1,84 +1,87 @@
 #include <sys/user.h>
 #include <malloc.h>
+#include <stdint.h>
 #include "fiber.h"
 
-struct Context *curr = NULL;
-struct Context *tail = NULL;
+struct Fiber *curr = NULL;
+//struct Fiber *tail = NULL;
 
 void Handler(void (*func)(void *), void *data) {
     func(data);
     curr->toDel = true;
-
-    // check here - might be wrong
-    struct Context *old = curr;
-    curr = curr->next;
-    asm volatile ("push %0\n\t"
-                  "push %1"
-            :
-            : "rm" (func), "rm" (data)); // will it work?
-    SwitchContext(old, curr);
+    FiberYield();
 }
 
 // damn, that is some shit code here
 void FiberSpawn(void (*func)(void *), void *data) {
     if (curr == NULL) {
-        curr = malloc(sizeof(struct Context));
+        curr = malloc(sizeof(struct Fiber));
+        curr->context = malloc(sizeof(struct Context));
         curr->toDel = false;
 
-        curr->rip = (void *) Handler;
-        curr->rsp = (void *) malloc(PAGE_SIZE);
-        curr->rsp += PAGE_SIZE;
-        curr->rdi = func; // idk, might be wrong, check calling conventions
-        curr->rsi = data;
+        curr->prev = malloc(sizeof(struct Fiber));
+        curr->prev->context = malloc(sizeof(struct Context));
 
-        tail = curr;// idk
-        tail->prev = curr;
-        tail->next = curr;
-        curr->prev = tail;
-        curr->next = tail;
+        curr->prev->toDel = false;
+
+        curr->prev->context->rip = (void *) Handler;
+        curr->prev->context->start = (void *) malloc(PAGE_SIZE);
+        curr->prev->context->rbp = curr->prev->context->start + PAGE_SIZE;
+        curr->prev->context->rsp = curr->prev->context->start + PAGE_SIZE - 8;
+
+//        *((char*) tail->context->rsp) = (char*) data;
+
+        curr->prev->context->func = func;
+        curr->prev->context->data = data;
+
+        curr->prev->prev = curr;
+        curr->prev->next = curr;
+        curr->next = curr->prev;
     } else {
-        struct Context *newContext = NULL;
-        newContext = malloc(sizeof(struct Context));
+        struct Fiber *newFiber = malloc(sizeof(struct Fiber));
+        newFiber->context = malloc(sizeof(struct Context));
 
-        newContext->toDel = false;
-        newContext->rip = (void *) Handler;
-        newContext->rsp = (void *) malloc(PAGE_SIZE);
-        newContext->rsp += PAGE_SIZE; // +- 1 ?
-        newContext->rdi = func; // idk, might be wrong, check calling conventions
-        newContext->rsi = data; // у меня в конспектах написано что так нельзя делать,
-        // т к эти регистры затерутся при вызове
+        newFiber->toDel = false;
+        newFiber->context->rip = (void *) Handler;
+        newFiber->context->start = (void *) malloc(PAGE_SIZE);
+        newFiber->context->rbp = newFiber->context->start + PAGE_SIZE;
+        newFiber->context->rsp = newFiber->context->start + PAGE_SIZE - 8;
 
-        // check this part later
-        newContext->next = tail->next;
+        newFiber->context->func = func;
+        newFiber->context->data = data;
 
-        tail->next = newContext;
-        newContext->prev = tail;
-        tail = newContext;
+        newFiber->next = curr;
+        newFiber->prev = curr->prev;
+        curr->prev->next = newFiber;
+        curr->prev = newFiber;
     }
 }
 
 void FiberYield() {
     // wtf, is this that easy???
-    struct Context *old = curr;
-    curr = curr->next;
+    struct Fiber *old = curr;
+    curr = old->next;
+
+    while (curr->toDel) {
+        curr = curr->next;
+    }
 
     asm volatile ("push %0\n\t"
                   "push %1"
             :
-            : "rm" (old->rdi), "rm" (old->rsi)); // will it work?
-    SwitchContext(old, curr);
-
-    if (old->toDel) {
-        free(old->rsp);
-        old->prev->next = old->next;
-        old->next->prev = old->prev;
-
-        free(curr);
-    }
+            : "rm" (old->context->func), "rm" (old->context->data));
+    SwitchContext(old->context, curr->context);
 }
 
 int FiberTryJoin() {
-    if (curr->next == NULL && curr->prev == NULL) {
+    int cnt = 1;
+    struct Fiber* fiber = curr->next;
+    while (fiber != curr) {
+        if (!fiber->toDel) ++cnt;
+        fiber = fiber->next;
+    }
+
+    if (cnt == 1) {
         return 1;
     }
 

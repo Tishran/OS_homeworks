@@ -1,12 +1,15 @@
 .global SwitchContext
-.global StartFiber
 
 // switch context works wrongly
 SwitchContext:
+        pop %rbx
         pop %rax //rsi
         pop %rcx //rdi
+        push %rbx
         movq        %rcx, 64(%rdi)
         movq        %rax, 72(%rdi)
+
+        xor %rax, %rax
 
         // Store callee-preserved registers
         movq        %rbx, 0(%rdi) /* FIBER_REG_RBX */
@@ -38,9 +41,9 @@ SwitchContext:
         movq        48(%rsi), %rsp /* FIBER_REG_RSP */
 
         // Load instruction pointer, and jump
-        movq        56(%rsi), %rcx /* FIBER_REG_RIP */
+        push        56(%rsi) /* FIBER_REG_RIP */
 
         // load func and its arguments
         movq        64(%rsi), %rdi
         movq        72(%rsi), %rsi
-        jmp         *%rcx
+        ret

@@ -2,15 +2,21 @@
 
 #include <stdbool.h>
 
-struct Context {
-    void *rbx, *rbp, *r12, *r13, *r14, *r15;
-    void *rsp, *rip;
-    void *rdi, *rsi; //for arguments
-    struct Context *next;
-    struct Context *prev;
-    bool toDel;
-};
+typedef struct Context {
+    void *rbx, *rbp, *r12, *r13, *r14, *r15, *rsp, *rip;
+    void (*func)(void *);
+    void *data;
+    void *start;
+} Context;
 
+typedef struct Fiber {
+    struct Context *context;
+    struct Fiber *next;
+    struct Fiber *prev;
+    bool toDel;
+} Fiber;
+
+extern void StartFiber(struct Context* current);
 extern void SwitchContext(struct Context *current, struct Context *next);
 
 void Handler(void (*func)(void *), void *data);
