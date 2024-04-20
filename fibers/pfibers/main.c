@@ -38,6 +38,7 @@ void TestSum() {
         FiberYield();
     }
 
+//    fprintf(stderr, "%d %ld %d", SUM_ITERS, r, n * SUM_ITERS);
     assert(SUM_ITERS <= r && r < n * SUM_ITERS);
 }
 

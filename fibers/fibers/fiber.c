@@ -6,6 +6,7 @@
 
 typedef struct Context {
     void *rbx, *rbp, *r12, *r13, *r14, *r15, *rsp, *rip;
+
     void (*func)(void *);
     void *data;
     void *start;
@@ -18,10 +19,9 @@ typedef struct Fiber {
     bool toDel;
 } Fiber;
 
-extern void StartFiber(struct Context* current);
-extern void SwitchContext(struct Context *current, struct Context *next);
-
 struct Fiber *curr = NULL;
+
+extern void SwitchContext(struct Context *current, struct Context *next);
 
 void Handler(void (*func)(void *), void *data) {
     func(data);
@@ -45,11 +45,13 @@ void FiberSpawn(void (*func)(void *), void *data) {
         curr->prev->context->start = (void *) malloc(PAGE_SIZE);
         curr->prev->context->rbp = curr->prev->context->start + PAGE_SIZE;
         curr->prev->context->rsp = curr->prev->context->start + PAGE_SIZE - 8;
+        *((size_t*) curr->prev->context->rsp) = (size_t) data;
+        curr->prev->context->rsp -= 8;
+        *((size_t*) curr->prev->context->rsp) = (size_t) func;
 
-//        *((char*) tail->context->rsp) = (char*) data;
 
-        curr->prev->context->func = func;
-        curr->prev->context->data = data;
+//        curr->prev->context->func = func;
+//        curr->prev->context->data = data;
 
         curr->prev->prev = curr;
         curr->prev->next = curr;
@@ -63,9 +65,13 @@ void FiberSpawn(void (*func)(void *), void *data) {
         newFiber->context->start = (void *) malloc(PAGE_SIZE);
         newFiber->context->rbp = newFiber->context->start + PAGE_SIZE;
         newFiber->context->rsp = newFiber->context->start + PAGE_SIZE - 8;
+        *((size_t*) curr->prev->context->rsp) = (size_t) func;
+        curr->prev->context->rsp -= 8;
+        *((size_t*) curr->prev->context->rsp) = (size_t) data;
+        curr->prev->context->rsp -= 8;
 
-        newFiber->context->func = func;
-        newFiber->context->data = data;
+//        newFiber->context->func = func;
+//        newFiber->context->data = data;
 
         newFiber->next = curr;
         newFiber->prev = curr->prev;
@@ -83,16 +89,16 @@ void FiberYield() {
         curr = curr->next;
     }
 
-    asm volatile ("push %0\n\t"
-                  "push %1"
-            :
-            : "rm" (old->context->func), "rm" (old->context->data));
+//    asm volatile ("push %0\n\t"
+//                  "push %1"
+//            :
+//            : "rm" (old->context->func), "rm" (old->context->data));
     SwitchContext(old->context, curr->context);
 }
 
 int FiberTryJoin() {
     int cnt = 1;
-    struct Fiber* fiber = curr->next;
+    struct Fiber *fiber = curr->next;
     while (fiber != curr) {
         if (!fiber->toDel) ++cnt;
         fiber = fiber->next;
@@ -104,7 +110,3 @@ int FiberTryJoin() {
 
     return 0;
 }
-
-
-//$rsi   : 0x8b000042d8058d48
-//$rdi   : 0x00005555555562f9  →  <FuncB+0> endbr64

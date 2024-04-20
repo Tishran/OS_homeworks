@@ -132,6 +132,8 @@ int FiberTryJoin() {
         fiber = fiber->next;
     }
 
+
+
     if (cnt == 1) {
         return 1;
     }
