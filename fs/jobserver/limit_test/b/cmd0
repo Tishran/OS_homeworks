@@ -1,0 +1,11 @@
+#!/bin/bash
+
+touch $TMP/$BASHPID
+
+sleep 0.1
+
+if [[ $(ls $TMP | wc -l) -gt 2 ]]; then
+    touch $TMP/limit
+fi
+
+rm $TMP/$BASHPID

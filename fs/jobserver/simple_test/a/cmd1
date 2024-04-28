@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sleep 0.2
+
+touch $TMP/a
