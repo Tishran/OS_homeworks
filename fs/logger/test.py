@@ -46,7 +46,6 @@ class Logger:
                 raise AssertionError(f'Content in {filename} != {content}')
 
         for i in range(len(self._track) - 1):
-            need_to_raise = False
             filename = f'{self._prefix}.{i + 1}'
             content = self._track[-2 - i]
             if content_differ(filename, content):

@@ -4,7 +4,7 @@ CFLAGS := -g -fsanitize=address,undefined -Wall -Werror
 all: run
 
 run: compile
-	./test.sh
+	/bin/bash ./test.sh
 
 compile: Makefile main.c
 	gcc $(CFLAGS) main.c -o $(RESULT)
