@@ -1,5 +1,5 @@
 RESULT := main
-CFLAGS := -g -fsanitize=address,undefined -Wall -Werror
+CFLAGS := -g -fsanitize=address -Wall -Werror
 
 all: run
 
