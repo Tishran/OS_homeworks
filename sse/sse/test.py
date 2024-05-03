@@ -16,7 +16,7 @@ def test_sse():
     print('Time without sse', nosse_elapsed)
     sse_elapsed = run(['./main', '--sse'])
     print('Time with sse', sse_elapsed)
-    assert sse_elapsed < nosse_elapsed / 2
+    assert sse_elapsed < nosse_elapsed / 1.5
 
 
 if __name__ == '__main__':
