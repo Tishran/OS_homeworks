@@ -27,10 +27,10 @@ double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float>
     __m128 result = _mm_setzero_ps();
     for (size_t i = 0; i < model.indexes.size() / 4; ++i, ++indexes_data, ++thresholds_data, ++values_data) {
 
-        __m128 features_vec = _mm_setr_ps(features[((int*) indexes_data)[0]],
-                                          features[((int*) indexes_data)[1]],
+        __m128 features_vec = _mm_set_ps(features[((int*) indexes_data)[3]],
                                           features[((int*) indexes_data)[2]],
-                                          features[((int*) indexes_data)[3]]);
+                                          features[((int*) indexes_data)[1]],
+                                          features[((int*) indexes_data)[0]]);
         __m128 mask = _mm_cmpgt_ps(features_vec, *thresholds_data);
 
         __m128 masked_values = _mm_and_ps(mask, *values_data);
