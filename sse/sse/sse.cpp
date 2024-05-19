@@ -1,4 +1,5 @@
 #include "sse.h"
+#include <immintrin.h>
 
 struct OptimizedModel {
     //    std::vector<__m128i> indexes_simd;

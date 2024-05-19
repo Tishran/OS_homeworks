@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <string>
-#include <immintrin.h>
 #include <vector>
 #include <variant>
 
