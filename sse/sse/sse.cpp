@@ -4,26 +4,21 @@ std::shared_ptr<OptimizedModel> Optimize(const Model& model) {
     auto optimizedModel = std::make_shared<OptimizedModel>();
 //    Rule emptyRule{0, 0, 0};
 
-    for (size_t i = 0; i < model.size(); ++i) {
-        optimizedModel->values.push_back(model[i].value);
-        optimizedModel->indexes.push_back(model[i].index);
-        optimizedModel->thresholds.push_back(model[i].threshold);
+    for (const auto & i : model) {
+//        auto& rule1 = model[i];
+//        auto& rule2 = (i + 1 < model.size()) ? model[i + 1] : emptyRule;
+//        auto& rule3 = (i + 1 < model.size()) ? model[i + 2] : emptyRule;
+//        auto& rule4 = (i + 1 < model.size()) ? model[i + 3] : emptyRule;
+
+//        optimizedModel->indexes_simd.push_back(_mm_set_epi32(rule4.index, rule3.index, rule2.index, rule1.index));
+//        optimizedModel->thresholds_simd.push_back(_mm_set_ps(rule4.threshold, rule3.threshold, rule2.threshold, rule1.threshold));
+//        optimizedModel->values_simd.push_back(_mm_set_ps(rule4.value, rule3.value, rule2.value, rule1.value));
+
+        optimizedModel->indexes.push_back(i.index);
+        optimizedModel->values.push_back(i.value);
+        optimizedModel->thresholds.push_back(i.threshold);
     }
 
-//    for (size_t i = 0; i < model.size(); i + 4) {
-//        auto& rule1 = (i + 4 >= model.size()) ? emptyRule : model[i];
-//        auto& rule2 = (i + 4 >= model.size()) ? emptyRule : model[i + 1];
-//        auto& rule3 = (i + 4 >= model.size()) ? emptyRule : model[i + 2];
-//        auto& rule4 = (i + 4 >= model.size()) ? emptyRule : model[i + 3];
-//
-//        optimizedModel->indexes.push_back(_mm_set_epi32(rule4.index, rule3.index, rule2.index, rule1.index));
-//        optimizedModel->thresholds.push_back(_mm_set_epi32(rule4.threshold, rule3.threshold, rule2.threshold, rule1.threshold));
-//        optimizedModel->values.push_back(rule1.value);
-//        optimizedModel->values.push_back(rule2.value);
-//        optimizedModel->values.push_back(rule3.value);
-//        optimizedModel->values.push_back(rule4.value);
-////        optimizedModel->values.push_back(_mm_set_ps(rule4.values, rule3.values, rule2.values, rule1.values));
-//    }
     return optimizedModel;
 }
 
@@ -38,16 +33,16 @@ double ApplyOptimizedModel(const OptimizedModel& model, const std::vector<float>
         __m128 features_values = _mm_i32gather_ps(features.data(), indices, 4);
         __m128 mask = _mm_cmpgt_ps(features_values, thresholds);
 
-        __m128d mask_d = _mm_castps_pd(mask);
+        __m128 rule_values = _mm_set_ps(model.values[i + 3], model.values[i + 2], model.values[i+1], model.values[i]);
 
-        __m128d rule_values1 = _mm_set_pd(model.values[i+1], model.values[i]);
-        __m128d rule_values2 = _mm_set_pd(model.values[i+3], model.values[i+2]);
+        __m128 masked_values = _mm_and_ps(mask, rule_values);
 
-        __m128d masked_values1 = _mm_and_pd(mask_d, rule_values1);
-        __m128d masked_values2 = _mm_and_pd(mask_d, rule_values2);
+        __m128 temp = _mm_movehl_ps(masked_values, masked_values);
+        masked_values = _mm_add_ps(masked_values, temp);
+        temp = _mm_shuffle_ps(masked_values, masked_values, 0x1);
+        masked_values = _mm_add_ss(masked_values, temp);
 
-        result += _mm_cvtsd_f64(masked_values1) + _mm_cvtsd_f64(_mm_unpackhi_pd(masked_values1, masked_values1));
-        result += _mm_cvtsd_f64(masked_values2) + _mm_cvtsd_f64(_mm_unpackhi_pd(masked_values2, masked_values2));
+        result += _mm_cvtss_f32(masked_values);
     }
 
     for (; i < model.indexes.size(); ++i) {
