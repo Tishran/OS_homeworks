@@ -36,8 +36,7 @@ std::shared_ptr<OptimizedModel> Optimize(const Model &model) {
 }
 
 double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float> &features) {
-    double result = 0.0;
-
+    __m128 result = _mm_setzero_ps();
     size_t i = 0;
     for (; i + 3 < model.indexes.size(); i += 4) {
         __m128i indices = _mm_set_epi32(model.indexes[i + 3], model.indexes[i + 2], model.indexes[i + 1],
@@ -53,17 +52,15 @@ double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float>
 
         __m128 masked_values = _mm_and_ps(mask, rule_values);
 
-        result += masked_values[0];
-        result += masked_values[1];
-        result += masked_values[2];
-        result += masked_values[3];
+        result = _mm_add_ps(result, masked_values);
     }
 
+    double d_result = result[0] + result[1] + result[2] + result[3];
     for (; i < model.indexes.size(); ++i) {
         if (features[model.indexes[i]] > model.thresholds[i]) {
-            result += model.values[i];
+            d_result += model.values[i];
         }
     }
 
-    return result;
+    return d_result;
 }
