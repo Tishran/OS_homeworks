@@ -18,15 +18,6 @@ std::shared_ptr<OptimizedModel> Optimize(const Model &model) {
 //    Rule emptyRule{0, 0, 0};
 
     for (const auto &i: model) {
-//        auto& rule1 = model[i];
-//        auto& rule2 = (i + 1 < model.size()) ? model[i + 1] : emptyRule;
-//        auto& rule3 = (i + 1 < model.size()) ? model[i + 2] : emptyRule;
-//        auto& rule4 = (i + 1 < model.size()) ? model[i + 3] : emptyRule;
-
-//        optimizedModel->indexes_simd.push_back(_mm_set_epi32(rule4.index, rule3.index, rule2.index, rule1.index));
-//        optimizedModel->thresholds_simd.push_back(_mm_set_ps(rule4.threshold, rule3.threshold, rule2.threshold, rule1.threshold));
-//        optimizedModel->values_simd.push_back(_mm_set_ps(rule4.value, rule3.value, rule2.value, rule1.value));
-
         optimizedModel->indexes.push_back(i.index);
         optimizedModel->values.push_back(i.value);
         optimizedModel->thresholds.push_back(i.threshold);
@@ -42,18 +33,12 @@ double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float>
 
     __m128 result = _mm_setzero_ps();
     for (size_t i = 0; i < model.indexes.size() / 4; ++i, ++indexes_data, ++thresholds_data, ++values_data) {
-//        __m128i indices = _mm_set_epi32(model.indexes[i + 3], model.indexes[i + 2], model.indexes[i + 1],
-//                                        model.indexes[i]);
-//        __m128 thresholds = _mm_set_ps(model.thresholds[i + 3], model.thresholds[i + 2], model.thresholds[i + 1],
-//                                       model.thresholds[i]);
 
-        __m128 features_vec = _mm_setr_ps(features[((int*) indexes_data)[3]],
-                                          features[((int*) indexes_data)[2]],
+        __m128 features_vec = _mm_setr_ps(features[((int*) indexes_data)[0]],
                                           features[((int*) indexes_data)[1]],
-                                          features[((int*) indexes_data)[0]]);
+                                          features[((int*) indexes_data)[2]],
+                                          features[((int*) indexes_data)[3]]);
         __m128 mask = _mm_cmpgt_ps(features_vec, *thresholds_data);
-
-//        __m128 rule_values = _mm_set_ps(model.values[i + 3], model.values[i + 2], model.values[i + 1], model.values[i]);
 
         __m128 masked_values = _mm_and_ps(mask, *values_data);
 
