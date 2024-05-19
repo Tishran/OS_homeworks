@@ -45,7 +45,8 @@ double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float>
         __m128 thresholds = _mm_set_ps(model.thresholds[i + 3], model.thresholds[i + 2], model.thresholds[i + 1],
                                        model.thresholds[i]);
 
-        __m128 features_values = _mm_i32gather_ps(features.data(), indices, 4);
+        __m128 features_values = _mm_set_ps(features[_mm_extract_epi32(indices, 3)], features[_mm_extract_epi32(indices, 2)],
+                                            features[_mm_extract_epi32(indices, 1)], features[_mm_extract_epi32(indices, 0)]);
         __m128 mask = _mm_cmpgt_ps(features_values, thresholds);
 
         __m128 rule_values = _mm_set_ps(model.values[i + 3], model.values[i + 2], model.values[i + 1], model.values[i]);
@@ -56,13 +57,6 @@ double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float>
         result += masked_values[1];
         result += masked_values[2];
         result += masked_values[3];
-
-//        __m128 temp = _mm_movehl_ps(masked_values, masked_values);
-//        masked_values = _mm_add_ps(masked_values, temp);
-//        temp = _mm_shuffle_ps(masked_values, masked_values, 0x1);
-//        masked_values = _mm_add_ss(masked_values, temp);
-//
-//        result += _mm_cvtss_f32(masked_values);
     }
 
     for (; i < model.indexes.size(); ++i) {
