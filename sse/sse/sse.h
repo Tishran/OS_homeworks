@@ -20,17 +20,7 @@ Model LoadModel(const std::string& path);
 
 double ApplyModel(const Model& model, const std::vector<float>& features);
 
-struct OptimizedModel {
-//    std::vector<__m128i> indexes_simd;
-//    std::vector<__m128> thresholds_simd;
-//    std::vector<__m128> values_simd;
-
-//    size_t model_size = 0;
-
-    std::vector<int> indexes;
-    std::vector<double> thresholds;
-    std::vector<double> values;
-};
+struct OptimizedModel;
 
 std::shared_ptr<OptimizedModel> Optimize(const Model& model);
 
