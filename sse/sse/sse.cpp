@@ -2,12 +2,6 @@
 #include <immintrin.h>
 
 struct OptimizedModel {
-    //    std::vector<__m128i> indexes_simd;
-//    std::vector<__m128> thresholds_simd;
-//    std::vector<__m128> values_simd;
-
-//    size_t model_size = 0;
-
     std::vector<int> indexes;
     std::vector<float> thresholds;
     std::vector<float> values;
@@ -15,7 +9,6 @@ struct OptimizedModel {
 
 std::shared_ptr<OptimizedModel> Optimize(const Model &model) {
     std::shared_ptr<OptimizedModel> optimizedModel = std::make_shared<OptimizedModel>();
-//    Rule emptyRule{0, 0, 0};
 
     for (const auto &i: model) {
         optimizedModel->indexes.push_back(i.index);
