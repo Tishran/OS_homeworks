@@ -52,12 +52,17 @@ double ApplyOptimizedModel(const OptimizedModel &model, const std::vector<float>
 
         __m128 masked_values = _mm_and_ps(mask, rule_values);
 
-        __m128 temp = _mm_movehl_ps(masked_values, masked_values);
-        masked_values = _mm_add_ps(masked_values, temp);
-        temp = _mm_shuffle_ps(masked_values, masked_values, 0x1);
-        masked_values = _mm_add_ss(masked_values, temp);
+        result += masked_values[0];
+        result += masked_values[1];
+        result += masked_values[2];
+        result += masked_values[3];
 
-        result += _mm_cvtss_f32(masked_values);
+//        __m128 temp = _mm_movehl_ps(masked_values, masked_values);
+//        masked_values = _mm_add_ps(masked_values, temp);
+//        temp = _mm_shuffle_ps(masked_values, masked_values, 0x1);
+//        masked_values = _mm_add_ss(masked_values, temp);
+//
+//        result += _mm_cvtss_f32(masked_values);
     }
 
     for (; i < model.indexes.size(); ++i) {
